@@ -139,16 +139,20 @@ function addArrFilmsToLocalStorage(arr) {
 // function addFilmToQueue(id) {}
 
 // }
+let idCurrentFilm;
+let btnAddToQueueEl;
 
 function addToQueue() {
-  const btnAddToQueueEl = document.querySelector('.btn-add-to-queue');
+  btnAddToQueueEl = document.querySelector('.btn-add-to-queue');
   btnAddToQueueEl?.addEventListener('click', onAddQueue);
 
   function onAddQueue(event) {
     event.preventDefault();
+    btnAddToQueueEl.textContent = 'Remove from Queue';
+    btnAddToQueueEl.style.backgroundColor = 'red';
 
     let currentFilm = {}; //1)
-    const idCurrentFilm = Number(event.currentTarget.id);
+    idCurrentFilm = Number(event.currentTarget.id);
 
     // 1) Дістаємо поточну сторінку фільмів з Локал сторедж
     const savedFilms = localStorage.getItem('Films');
@@ -194,7 +198,9 @@ function addToQueue() {
           boolPresentFilm = true;
 
           alert('Цей фільм вже є у списку');
-          // btnAddToQueueEl.textContent = "Remove from Queue"
+
+          // btnAddToQueueEl.textContent = 'Remove from Queue';
+          // btnAddToQueueEl.style.backgroundColor = 'red';
         }
         return;
       });
@@ -213,16 +219,68 @@ function addToQueue() {
   }
 }
 
+// 3) При загрузці фільмів перевіряє чи є цей фільм у Queue
 function checkPresenceFilm() {
   const savedFilmsInQueue = localStorage.getItem('FilmsArrQueue');
-
   const parsedFilmsInQueue = JSON.parse(savedFilmsInQueue);
-  console.log(parsedFilmsInQueue);
-  // parsedFilmsInQueue.map(film => {
-  //   if (film.id === 67) {
-  //   }
-  // });
+  // console.log(btnAddToQueueEl);
+  const btnAddToQueueEl = document.querySelector('.btn-add-to-queue');
+  // console.log(btnAddToQueueEl.id);
+  const idBtn = Number(btnAddToQueueEl.id);
+  parsedFilmsInQueue.map(film => {
+    if (film.id === idBtn) {
+      // return (btnAddToQueueEl.textContent = 'Remove from Queue');
+      btnAddToQueueEl.textContent = 'Remove from Queue';
+      btnAddToQueueEl.style.backgroundColor = 'red';
+
+      // alert('sdsfdsfsdfdfsdfs');
+    }
+  });
 }
+
+// 4) Рендерить сторінку при натисканні на кнопку Queue
+
+const btnQueue = document.querySelector('.queue-btn');
+// console.log(btnQueue);
+btnQueue.addEventListener('click', onQueue);
+
+function onQueue() {
+  const savedFilmsInQueue = localStorage.getItem('FilmsArrQueue');
+  const parsedFilmsInQueue = JSON.parse(savedFilmsInQueue);
+  // console.log(parsedFilmsInQueue);
+  // parsedFilmsInQueue.map()
+  const markupCard = parsedFilmsInQueue
+    .map(
+      hit =>
+        `
+      
+        <img src="${hit.webformatURL}" alt="${hit.tags}" loading="lazy" width=300 height=200 />
+        <div class="photo-card">
+          <div class="info">
+            <p class="info-item">
+              <b>Likes</b><br>${hit.likes}
+            </p>
+            <p class="info-item">
+              <b>Views</b><br>${hit.views}
+            </p>
+            <p class="info-item">
+              <b>Comments</b><br>${hit.comments}
+            </p>
+            <p class="info-item">
+              <b>Downloads</b><br>${hit.downloads}
+            </p>
+          </div>
+          <button type="button" id="${hit.id}"class="btn-add-to-queue">Add to Queue</button> 
+        </div>
+      `
+    )
+    .join('');
+
+  galleryEl.insertAdjacentHTML('beforeend', markupCard);
+  checkPresenceFilm();
+  // galleryLightbox.refresh();
+}
+
 // =====================================================================================
 // =====================================================================================
 // =====================================================================================
