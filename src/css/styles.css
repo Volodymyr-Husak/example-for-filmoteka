@@ -76,3 +76,7 @@ body {
   text-decoration: none;
   padding: 2px 1px 0;
 }
+
+.btn-add-to-queue{
+  background-color: green;
+}
