@@ -56,9 +56,11 @@ function onSubmit(event) {
         // scrollStart();
 
         // for Filmoteka
-        checkPresenceFilm();
+
+        // console.log(dataHits);
         addArrFilmsToLocalStorage(dataHits);
-        addToQueue();
+        addToQueueRemove();
+        checkPresenceFilm();
       }
       hitsArr = search.data.hits;
       // console.log(hitsArr);
@@ -87,12 +89,12 @@ function deletePhotoMarkup() {
 
 function renderPhotoMarkup(search) {
   hitsArr = search.data.hits;
-  // checkPresenceFilm()
+  // checkPresenceFilm();
   const markupCard = hitsArr
     .map(
       hit =>
         `
-      
+      <a class="photo-link" href="">
         <img src="${hit.webformatURL}" alt="${hit.tags}" loading="lazy" width=300 height=200 />
         <div class="photo-card">
           <div class="info">
@@ -111,7 +113,7 @@ function renderPhotoMarkup(search) {
           </div>
           <button type="button" id="${hit.id}"class="btn-add-to-queue">Add to Queue</button> 
         </div>
-      `
+      </a>`
     )
     .join('');
 
@@ -126,7 +128,7 @@ function renderPhotoMarkup(search) {
 // inputEl.addEventListener('input', onInput);
 
 function addArrFilmsToLocalStorage(arr) {
-  // console.log(arr);
+  console.log(arr);
   // const save = (Films, arr) => {
   try {
     const serializedState = JSON.stringify(arr);
@@ -142,35 +144,77 @@ function addArrFilmsToLocalStorage(arr) {
 let idCurrentFilm;
 let btnAddToQueueEl;
 
-function addToQueue() {
+function addToQueueRemove() {
   btnAddToQueueEl = document.querySelector('.btn-add-to-queue');
   btnAddToQueueEl?.addEventListener('click', onAddQueue);
 
+  // btnAddToQueueEl = document.querySelectorAll('.btn-add-to-queue');
+
+  // btnAddToQueueEl.forEach(element => {
+  //   element.addEventListener('click', onAddQueue);
+  // });
+
   function onAddQueue(event) {
     event.preventDefault();
-    btnAddToQueueEl.textContent = 'Remove from Queue';
-    btnAddToQueueEl.style.backgroundColor = 'red';
 
     let currentFilm = {}; //1)
     idCurrentFilm = Number(event.currentTarget.id);
 
+    //0)Якщо фільм вже є у списку Черги
+    if (btnAddToQueueEl.textContent === 'Remove from Queue') {
+      btnAddToQueueEl.textContent = 'Add to Queue';
+      btnAddToQueueEl.style.backgroundColor = 'green';
+
+      //0.1) Дістаєм з локал сторедж список Черги
+      // const savedFilmsInQueue = localStorage.getItem('FilmsArrQueue');
+      // const parsedFilmsInQueue = JSON.parse(savedFilmsInQueue);
+      const parsedFilmsInQueue = getArrQueueWithLocalStorage();
+
+      //0.2)Перебираєм масив Черги з локал сторедж
+      // і повертаєм фільм який потрібно видалити з списку
+      let newArrFilms = parsedFilmsInQueue;
+      parsedFilmsInQueue.map((film, index) => {
+        if (film.id === idCurrentFilm) {
+          // 0.3)Видаляєм з масиву поточний фільм
+          newArrFilms.splice(index, 1);
+          setArrQueueInLocalStorage(newArrFilms);
+        }
+        return;
+      });
+
+      return;
+    }
+
+    btnAddToQueueEl.textContent = 'Remove from Queue';
+    btnAddToQueueEl.style.backgroundColor = 'red';
+
+    // let currentFilm = {}; //1)
+    // idCurrentFilm = Number(event.currentTarget.id);
+
     // 1) Дістаємо поточну сторінку фільмів з Локал сторедж
     const savedFilms = localStorage.getItem('Films');
     const parsedFilms = JSON.parse(savedFilms);
+    // const parsedFilms = getArrQueueWithLocalStorage();
+
+    // console.log(parsedFilms);
 
     parsedFilms.map(film => {
       //1.1)Перевіряєм чи поточний фільм id співпадає з id фільму з локал сторедж
       if (film.id === idCurrentFilm) {
+        // console.log(film.id);
+        // console.log(currentFilm);
+
         currentFilm = film;
+        // console.log(currentFilm);
       }
       return;
     });
 
     // 2) Перевіряєм/дістаєм з локал сторедж Queue
-    const savedFilmsInQueue = localStorage.getItem('FilmsArrQueue');
-
-    const parsedFilmsInQueue = JSON.parse(savedFilmsInQueue);
-    console.log(parsedFilmsInQueue);
+    // const savedFilmsInQueue = localStorage.getItem('FilmsArrQueue');
+    // const parsedFilmsInQueue = JSON.parse(savedFilmsInQueue);
+    const parsedFilmsInQueue = getArrQueueWithLocalStorage();
+    // console.log(parsedFilmsInQueue);
 
     // 2.1) Добавляєм в локал сторедж Queue якщо там пусто
     if (!parsedFilmsInQueue) {
@@ -205,7 +249,7 @@ function addToQueue() {
         return;
       });
       // 2.3) Перевіряєм чи поточний фільм є у локал сторедж,
-      // якщо ні добавляєм в локал сторедж Queue якщо там пусто
+      // якщо ні добавляєм в локал сторедж Queue
       if (!boolPresentFilm) {
         try {
           newArrQueue = [...parsedFilmsInQueue, currentFilm];
@@ -220,9 +264,11 @@ function addToQueue() {
 }
 
 // 3) При загрузці фільмів перевіряє чи є цей фільм у Queue
+// і робить кнопку червоною/зеленою
 function checkPresenceFilm() {
-  const savedFilmsInQueue = localStorage.getItem('FilmsArrQueue');
-  const parsedFilmsInQueue = JSON.parse(savedFilmsInQueue);
+  // const savedFilmsInQueue = localStorage.getItem('FilmsArrQueue');
+  // const parsedFilmsInQueue = JSON.parse(savedFilmsInQueue);
+  const parsedFilmsInQueue = getArrQueueWithLocalStorage();
   // console.log(btnAddToQueueEl);
   const btnAddToQueueEl = document.querySelector('.btn-add-to-queue');
   // console.log(btnAddToQueueEl.id);
@@ -245,15 +291,44 @@ const btnQueue = document.querySelector('.queue-btn');
 btnQueue.addEventListener('click', onQueue);
 
 function onQueue() {
-  const savedFilmsInQueue = localStorage.getItem('FilmsArrQueue');
-  const parsedFilmsInQueue = JSON.parse(savedFilmsInQueue);
-  // console.log(parsedFilmsInQueue);
-  // parsedFilmsInQueue.map()
-  const markupCard = parsedFilmsInQueue
+  deletePhotoMarkup();
+  //дістаємо з локал сторедж
+  // const savedFilmsInQueue = localStorage.getItem('FilmsArrQueue');
+
+  // const parsedFilmsInQueue = JSON.parse(savedFilmsInQueue);
+  const parsedFilmsInQueue = getArrQueueWithLocalStorage();
+
+  if (!parsedFilmsInQueue || parsedFilmsInQueue.length === 0) {
+    return;
+  }
+  // рендер
+  renderQueue(parsedFilmsInQueue);
+
+  // 4.1) При загрузці фільмів перевіряє чи є цей фільм у Queue
+  // і робить кнопку червоною/зеленою
+  checkPresenceFilm();
+
+  //Видаляєм фільм з локал сторедж
+  addToQueueRemove();
+
+  //4.2)Видалення картки i оновлення інтерфейсу
+  const btnRemoveForQueueEl = document.querySelector('.btn-add-to-queue');
+  btnRemoveForQueueEl?.addEventListener('click', onRemoveQueue);
+
+  function onRemoveQueue(event) {
+    event.preventDefault();
+    deletePhotoMarkup();
+    const arrQueueWithLocalStorage = getArrQueueWithLocalStorage();
+    renderQueue(arrQueueWithLocalStorage);
+  }
+}
+// 5) Рендер Queue
+function renderQueue(arr) {
+  const markupCard = arr
     .map(
       hit =>
         `
-      
+      <a class="photo-link" href="">
         <img src="${hit.webformatURL}" alt="${hit.tags}" loading="lazy" width=300 height=200 />
         <div class="photo-card">
           <div class="info">
@@ -272,13 +347,37 @@ function onQueue() {
           </div>
           <button type="button" id="${hit.id}"class="btn-add-to-queue">Add to Queue</button> 
         </div>
-      `
+      </a>`
     )
     .join('');
 
   galleryEl.insertAdjacentHTML('beforeend', markupCard);
-  checkPresenceFilm();
-  // galleryLightbox.refresh();
+}
+// 6) Set масиву фільмів у локал сторедж
+function setArrQueueInLocalStorage(arr) {
+  try {
+    const serializedState = JSON.stringify(arr);
+    localStorage.setItem('FilmsArrQueue', serializedState);
+  } catch (error) {
+    console.error('Set state error: ', error.message);
+  }
+}
+
+// 7) Get масиву фільмів у локал сторедж
+function getArrQueueWithLocalStorage() {
+  // try {
+  //   const savedFilmsInQueue = localStorage.getItem('FilmsArrQueue');
+  //   const parsedFilmsInQueue = JSON.parse(savedFilmsInQueue);
+  //   return parsedFilmsInQueue;
+  // } catch (error) {
+  //   console.error('Set state error: ', error.message);
+  // }
+  try {
+    const serializedState = localStorage.getItem('FilmsArrQueue');
+    return serializedState === null ? undefined : JSON.parse(serializedState);
+  } catch (error) {
+    console.error('Get state error: ', error.message);
+  }
 }
 
 // =====================================================================================
